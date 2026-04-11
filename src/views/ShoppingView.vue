@@ -55,10 +55,10 @@ function startCooking() {
   <div class="min-h-screen pb-32 bg-gradient-to-b from-amber-50 to-orange-50">
     <!-- Header -->
     <div class="sticky top-0 z-10 bg-white/90 backdrop-blur-sm shadow-sm px-4 py-3">
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-center gap-4">
         <h2 class="text-lg font-bold">🛒 超市采购</h2>
-        <div class="text-sm text-right">
-          <div>🧺 {{ economy.basketCount }}/{{ economy.basketCapacity }}份</div>
+        <div class="text-sm font-medium text-gray-500">
+          🧺 {{ economy.basketCount }}/{{ economy.basketCapacity }}份
         </div>
       </div>
     </div>
@@ -114,20 +114,13 @@ function startCooking() {
         <div class="text-sm">
           <span class="font-bold text-primary">{{ ingredient.totalUnits }}/{{ economy.basketCapacity }}份</span>
         </div>
-        <div class="flex gap-2">
-          <button
-            @click="randomBasket"
-            class="bg-gray-100 text-gray-600 py-2.5 px-4 rounded-xl text-sm font-bold
-                   active:scale-95 transition-transform"
-          >🎲 再来一篮</button>
-          <button
-            @click="startCooking"
-            :disabled="ingredient.totalUnits === 0"
-            class="bg-primary text-white py-2.5 px-5 rounded-xl text-sm font-bold
-                   active:scale-95 transition-transform shadow
-                   disabled:opacity-40 disabled:cursor-not-allowed"
-          >🍳 开始烹饪!</button>
-        </div>
+        <button
+          @click="startCooking"
+          :disabled="ingredient.totalUnits === 0"
+          class="bg-primary text-white py-2.5 px-5 rounded-xl text-sm font-bold
+                 active:scale-95 transition-transform shadow
+                 disabled:opacity-40 disabled:cursor-not-allowed"
+        >🍳 开始烹饪!</button>
       </div>
     </div>
   </div>
