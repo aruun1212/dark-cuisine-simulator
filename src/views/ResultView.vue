@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/game'
 import { useResultStore } from '../stores/result'
 import { getTechniqueById } from '../data/techniques'
 import { RARE_COMBOS } from '../data/endings'
-import { captureAndDownload } from '../utils/share'
 import { audioManager } from '../utils/audio'
 import { GAME_URL } from '../config'
 import QRCode from 'qrcode'
+import html2canvas from 'html2canvas-pro'
 
 const router = useRouter()
 const game = useGameStore()
@@ -17,15 +17,20 @@ const result = useResultStore()
 // Play result sound on mount
 audioManager.playSFX('result')
 
+// Share overlay state
+const showShareOverlay = ref(false)
+const shareImageUrl = ref('')
 const shareCard = ref<HTMLElement | null>(null)
 const qrDataUrl = ref('')
+const isGenerating = ref(false)
 
 onMounted(async () => {
+  // Pre-generate QR code (for the share image only, not shown on result page)
   if (GAME_URL) {
     try {
       qrDataUrl.value = await QRCode.toDataURL(GAME_URL, { width: 100, margin: 1 })
     } catch {
-      // QR generation failed, use placeholder
+      // QR generation failed silently
     }
   }
 })
@@ -52,27 +57,48 @@ function playAgain() {
 
 async function share() {
   audioManager.playSFX('share')
+  isGenerating.value = true
+  showShareOverlay.value = true
+  await nextTick()
+
+  // Capture the hidden share card (which includes QR code)
   if (shareCard.value) {
-    await captureAndDownload(shareCard.value)
+    try {
+      const canvas = await html2canvas(shareCard.value, {
+        backgroundColor: '#FFF8F0',
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      })
+      shareImageUrl.value = canvas.toDataURL('image/png')
+    } catch {
+      shareImageUrl.value = ''
+    }
   }
+  isGenerating.value = false
+}
+
+function closeOverlay() {
+  showShareOverlay.value = false
+  shareImageUrl.value = ''
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50 px-4 py-6 pb-24">
-    <!-- Share card container -->
-    <div ref="shareCard" class="bg-white rounded-2xl p-5 shadow-lg max-w-sm mx-auto">
+    <!-- ═══════ Result Display (NO QR code here) ═══════ -->
+    <div class="bg-white rounded-2xl p-5 shadow-lg max-w-sm mx-auto">
       <!-- Title -->
       <div class="text-center mb-4">
         <div class="text-sm text-gray-400">🍳 黑暗料理模拟器</div>
       </div>
 
-      <!-- Dish name (xl font-black, most prominent) -->
+      <!-- Dish name -->
       <h1 class="text-xl font-black text-center text-dark mb-2 leading-tight">
         📛 {{ result.dishName }}
       </h1>
 
-      <!-- Ending name (badge) + Rare combos (yellow badge) -->
+      <!-- Ending name -->
       <div class="text-center mb-3">
         <span class="inline-block bg-primary/10 text-primary font-bold px-4 py-1.5 rounded-full text-base">
           🏆 {{ result.endingName }}
@@ -85,7 +111,7 @@ async function share() {
         </div>
       </div>
 
-      <!-- Sub-comments / evaluation (large italic text) -->
+      <!-- Sub-comments -->
       <div v-if="result.subComments.length > 0" class="mb-4 text-center">
         <p v-for="(comment, i) in result.subComments" :key="i"
           class="text-base text-gray-700 italic font-medium leading-relaxed">
@@ -101,17 +127,16 @@ async function share() {
         </span>
       </div>
 
-      <!-- Divider -->
       <div class="border-t border-gray-100 my-3"></div>
 
-      <!-- Calories: large number + tier comment -->
+      <!-- Calories -->
       <div class="text-center mb-4">
         <div class="text-xs text-gray-400 mb-1">🔥 卡路里</div>
         <div class="font-black text-2xl text-dark">{{ result.metrics.calories }} kcal</div>
         <div class="text-sm text-gray-500 mt-0.5">{{ tierLabels[result.tiers.calories] }}</div>
       </div>
 
-      <!-- Color / Aroma / Taste: tier label only, small gray text, no numbers -->
+      <!-- Color / Aroma / Taste -->
       <div class="flex justify-center gap-6 mb-4 text-sm text-gray-400">
         <div class="text-center">
           <span>🎨 色</span>
@@ -127,10 +152,9 @@ async function share() {
         </div>
       </div>
 
-      <!-- Divider -->
       <div class="border-t border-gray-100 my-3"></div>
 
-      <!-- Process sequence + crit count (auxiliary info at bottom) -->
+      <!-- Process sequence -->
       <div class="text-center text-xs text-gray-400 mb-2">
         <span>📋 </span>
         <span v-for="(id, i) in result.techniqueSequence" :key="i">
@@ -139,13 +163,6 @@ async function share() {
       </div>
       <div v-if="result.critCount > 0" class="text-center text-xs text-yellow-600">
         ✨ 暴击 × {{ result.critCount }}
-      </div>
-
-      <!-- QR Code area -->
-      <div class="border-t border-gray-100 my-3"></div>
-      <div class="text-center">
-        <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR Code" class="w-20 h-20 mx-auto mb-1" />
-        <div v-else class="text-sm text-gray-300 py-3">🎮 扫码来玩</div>
       </div>
     </div>
 
@@ -156,7 +173,7 @@ async function share() {
         class="w-full bg-accent text-white py-3 rounded-xl font-bold text-base
                active:scale-95 transition-transform shadow flex items-center justify-center gap-2"
       >
-        📱 保存分享图片
+        📱 分享结果
       </button>
       <button
         @click="playAgain"
@@ -172,6 +189,73 @@ async function share() {
       >
         📖 结局图鉴
       </button>
+    </div>
+
+    <!-- ═══════ Hidden share card (with QR, for screenshot only) ═══════ -->
+    <div class="fixed -left-[9999px] top-0">
+      <div ref="shareCard" class="bg-white p-5 w-[340px]">
+        <div class="text-center mb-3">
+          <div class="text-sm text-gray-400">🍳 黑暗料理模拟器</div>
+        </div>
+        <h2 class="text-xl font-black text-center mb-2">📛 {{ result.dishName }}</h2>
+        <div class="text-center mb-3">
+          <span class="inline-block bg-orange-100 text-orange-700 font-bold px-4 py-1.5 rounded-full text-base">
+            🏆 {{ result.endingName }}
+          </span>
+        </div>
+        <div v-if="result.subComments.length > 0" class="mb-3 text-center">
+          <p v-for="(comment, i) in result.subComments" :key="i"
+            class="text-sm text-gray-600 italic leading-relaxed">
+            💬 "{{ comment }}"
+          </p>
+        </div>
+        <div class="text-center mb-3">
+          <div class="text-xs text-gray-400 mb-1">🔥 卡路里</div>
+          <div class="font-black text-xl">{{ result.metrics.calories }} kcal</div>
+        </div>
+        <div class="flex justify-center gap-6 mb-3 text-xs text-gray-400">
+          <div class="text-center">🎨 {{ tierLabels[result.tiers.color] }}</div>
+          <div class="text-center">👃 {{ tierLabels[result.tiers.aroma] }}</div>
+          <div class="text-center">👅 {{ tierLabels[result.tiers.taste] }}</div>
+        </div>
+        <div class="text-center text-xs text-gray-400 mb-3">
+          <span v-for="(id, i) in result.techniqueSequence" :key="i">
+            {{ getTechEmoji(id) }}{{ getTechName(id) }}{{ i < result.techniqueSequence.length - 1 ? ' → ' : '' }}
+          </span>
+        </div>
+        <!-- QR Code (only in share image) -->
+        <div class="border-t border-gray-200 pt-3 flex items-center justify-center gap-3">
+          <img v-if="qrDataUrl" :src="qrDataUrl" class="w-16 h-16" />
+          <div class="text-xs text-gray-400 text-left">
+            <div class="font-bold text-gray-600">扫码来玩 👆</div>
+            <div>黑暗料理模拟器</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════ Share Overlay ═══════ -->
+    <div v-if="showShareOverlay" class="fixed inset-0 z-50 bg-black/70 flex flex-col items-center justify-center p-6"
+         @click.self="closeOverlay">
+      <div v-if="isGenerating" class="text-white text-lg font-bold animate-pulse">
+        📸 生成分享图片中...
+      </div>
+      <template v-else-if="shareImageUrl">
+        <img :src="shareImageUrl" class="max-w-[90vw] max-h-[70vh] rounded-xl shadow-2xl" />
+        <p class="text-white/80 text-sm mt-4 text-center">📱 长按图片保存到相册</p>
+        <button @click="closeOverlay"
+          class="mt-4 bg-white/20 text-white px-6 py-2 rounded-full text-sm font-bold
+                 active:scale-95 transition-transform">
+          ✕ 关闭
+        </button>
+      </template>
+      <div v-else class="text-white text-center">
+        <p class="text-lg mb-3">😢 图片生成失败</p>
+        <button @click="closeOverlay"
+          class="bg-white/20 text-white px-6 py-2 rounded-full text-sm font-bold">
+          关闭
+        </button>
+      </div>
     </div>
   </div>
 </template>

@@ -23,8 +23,6 @@ const isExecuting = ref(false)
 const execCrits = ref<{ name: string; emoji: string }[]>([])
 const showCritIndex = ref(-1)
 const extraCritCount = ref(0)  // crits beyond the max display limit
-const debugLog = ref<string[]>([])
-function dlog(msg: string) { debugLog.value.push(`${Date.now() % 100000}: ${msg}`) }
 
 const hasPlacedCards = computed(() => pipeline.slots.some(s => s !== null))
 
@@ -88,7 +86,6 @@ const MAX_CRIT_DISPLAY = 2
 
 function startCooking() {
   const placed = pipeline.getPlacedCards()
-  dlog(`start: placed=${placed.length} R=${game.currentRound} last=${game.isLastRound}`)
   if (placed.length === 0) return
 
   game.startExecute()
@@ -101,16 +98,14 @@ function startCooking() {
   let crits: { name: string; emoji: string }[] = []
   try {
     const steps = executePipeline(placed)
-    dlog(`exec OK: ${steps.length} steps`)
     crits = steps.filter(s => s.isCrit).map(s => ({
       name: s.critName ?? '暴击！',
       emoji: s.emoji,
     }))
   } catch (e: any) {
-    dlog(`exec CRASH: ${e?.message ?? e}`)
+    console.error('[CookingView] executePipeline failed:', e)
   }
   execCrits.value = crits
-  dlog(`crits=${crits.length}, timer 2s`)
 
   if (crits.length > MAX_CRIT_DISPLAY) {
     extraCritCount.value = crits.length - MAX_CRIT_DISPLAY
@@ -120,7 +115,6 @@ function startCooking() {
 
   // Base cooking animation: 2 seconds, then show crits
   setTimeout(() => {
-    dlog(`timer fired crits=${crits.length}`)
     if (crits.length > 0) {
       showNextCrit()
     } else {
@@ -142,22 +136,18 @@ function showNextCrit() {
 }
 
 function finishExecution() {
-  dlog(`finish: last=${game.isLastRound} R=${game.currentRound} phase=${game.phase} sub=${game.cookingSubPhase}`)
   isExecuting.value = false
 
   if (game.isLastRound) {
     try {
       result.computeFinalResult()
-      dlog('computeResult OK')
-    } catch (e: any) {
-      dlog(`computeResult CRASH: ${e?.message ?? e}`)
+    } catch (e) {
+      console.error('[CookingView] computeFinalResult failed:', e)
     }
-    dlog('goToResult + push /result')
     game.goToResult()
     router.push('/result')
   } else {
     game.nextRound()
-    dlog(`nextRound -> R=${game.currentRound}`)
   }
 }
 </script>
@@ -350,7 +340,7 @@ function finishExecution() {
     <!-- ═══════ EXECUTE SUB-PHASE (simplified animation) ═══════ -->
     <div v-else-if="game.cookingSubPhase === 'execute'" class="px-4 pt-4 pb-24 flex flex-col items-center justify-center min-h-[60vh]">
       <!-- Cooking animation -->
-      <div v-if="isExecuting || debugLog.length > 0" class="text-center">
+      <div v-if="isExecuting" class="text-center">
         <!-- Pot shake animation -->
         <div class="text-7xl mb-4 cooking-shake">🍳</div>
         <div class="text-lg font-bold text-gray-700 mb-2">正在烹调...</div>
@@ -370,10 +360,6 @@ function finishExecution() {
             +{{ extraCritCount }} 更多暴击
           </div>
         </div>
-      </div>
-      <!-- Debug panel (temporary) -->
-      <div v-if="debugLog.length > 0" class="mt-6 bg-black/80 text-green-400 text-xs font-mono p-3 rounded-lg text-left max-h-40 overflow-y-auto w-full">
-        <div v-for="(line, i) in debugLog" :key="i">{{ line }}</div>
       </div>
     </div>
   </div>
