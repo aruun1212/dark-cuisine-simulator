@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/game'
 import { useEconomyStore } from '../stores/economy'
 import { useCardStore } from '../stores/card'
+import { useIngredientStore } from '../stores/ingredient'
 import { usePipelineStore } from '../stores/pipeline'
 import { useResultStore } from '../stores/result'
 import { executePipeline } from '../logic/pipeline-exec'
@@ -15,6 +16,7 @@ const router = useRouter()
 const game = useGameStore()
 const economy = useEconomyStore()
 const card = useCardStore()
+const ingredient = useIngredientStore()
 const pipeline = usePipelineStore()
 const result = useResultStore()
 
@@ -25,6 +27,12 @@ const showCritIndex = ref(-1)
 const extraCritCount = ref(0)  // crits beyond the max display limit
 
 const hasPlacedCards = computed(() => pipeline.slots.some(s => s !== null))
+
+// ═══════ Ingredient drawer ═══════
+const showIngredientDrawer = ref(false)
+function toggleIngredientDrawer() {
+  showIngredientDrawer.value = !showIngredientDrawer.value
+}
 
 // ═══════ Context panel: process history ═══════
 const processHistory = computed(() => {
@@ -187,6 +195,27 @@ function finishExecution() {
         <div class="text-xs text-amber-700 italic truncate">
           🧑‍🍳 {{ chefComment }}
         </div>
+      </div>
+
+      <!-- Ingredient drawer toggle -->
+      <div
+        @click="toggleIngredientDrawer"
+        class="mt-1.5 flex items-center gap-1 cursor-pointer select-none"
+      >
+        <span class="text-xs text-gray-400 font-medium">
+          🧺 食材 ({{ ingredient.basketEntries.length }}种)
+        </span>
+        <span class="text-[10px] text-gray-300 transition-transform" :class="showIngredientDrawer ? 'rotate-180' : ''">▼</span>
+      </div>
+      <!-- Ingredient drawer content -->
+      <div v-if="showIngredientDrawer" class="mt-1.5 flex flex-wrap gap-1.5">
+        <span
+          v-for="entry in ingredient.basketEntries"
+          :key="entry.id"
+          class="inline-flex items-center gap-0.5 bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded-full"
+        >
+          {{ entry.ingredient.emoji }} {{ entry.ingredient.name }}<span v-if="entry.qty > 1" class="text-amber-500">×{{ entry.qty }}</span>
+        </span>
       </div>
     </div>
 
