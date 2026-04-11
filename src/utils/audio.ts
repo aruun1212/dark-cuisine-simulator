@@ -45,7 +45,9 @@ class AudioManager {
   /** Initialize BGM element (lazy, does not play until user interaction) */
   initBGM() {
     if (this.bgm) return
-    this.bgm = new Audio('/audio/bgm.mp3')
+    // Use import.meta.env.BASE_URL so the path works on both dev and GitHub Pages
+    const base = import.meta.env.BASE_URL ?? '/'
+    this.bgm = new Audio(`${base}audio/bgm.mp3`)
     this.bgm.loop = true
     this.bgm.volume = 0.3
 
@@ -55,7 +57,7 @@ class AudioManager {
     }, { once: true })
     this.bgm.addEventListener('error', () => {
       this.bgmReady = false
-      console.warn('[AudioManager] BGM file not found at /audio/bgm.mp3 — music disabled')
+      console.warn('[AudioManager] BGM file not found — music disabled')
     }, { once: true })
     this.bgm.load()
   }
@@ -68,6 +70,14 @@ class AudioManager {
       this.bgm.play().catch(() => {
         // Autoplay blocked, will retry on next user interaction
       })
+    } else if (this.bgm && !this.bgmReady) {
+      // File still loading — play as soon as it's ready
+      this.bgm.addEventListener('canplaythrough', () => {
+        this.bgmReady = true
+        if (audioState.musicEnabled) {
+          this.bgm!.play().catch(() => {})
+        }
+      }, { once: true })
     }
   }
 
