@@ -46,8 +46,7 @@ function startGame() {
     </div>
 
     <!-- Footer -->
-    <div class="mt-12 text-center text-xs text-gray-300 space-y-1">
-      <p>惊喜 &gt; 优化 · 搞笑 &gt; 完美 · 分享 &gt; 通关</p>
+    <div class="mt-12 text-center text-xs text-gray-300">
       <p>Made with ❤️ by <a href="https://github.com/aruun1212" target="_blank" rel="noopener" class="underline hover:text-gray-500">@aruun1212</a></p>
     </div>
   </div>

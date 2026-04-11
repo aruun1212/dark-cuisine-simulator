@@ -47,35 +47,48 @@ class AudioManager {
     if (this.bgm) return
     // Use import.meta.env.BASE_URL so the path works on both dev and GitHub Pages
     const base = import.meta.env.BASE_URL ?? '/'
-    this.bgm = new Audio(`${base}audio/bgm.mp3`)
+    const bgmUrl = `${base}audio/bgm.mp3`
+    console.log(`[TRACE BGM] initBGM: creating Audio element, url=${bgmUrl}`)
+    this.bgm = new Audio(bgmUrl)
     this.bgm.loop = true
     this.bgm.volume = 0.3
 
     // Handle missing BGM file gracefully
     this.bgm.addEventListener('canplaythrough', () => {
       this.bgmReady = true
+      console.log('[TRACE BGM] canplaythrough fired, bgmReady=true')
     }, { once: true })
-    this.bgm.addEventListener('error', () => {
+    this.bgm.addEventListener('error', (e) => {
       this.bgmReady = false
-      console.warn('[AudioManager] BGM file not found — music disabled')
+      console.warn('[TRACE BGM] error event fired — music disabled', this.bgm?.error, e)
     }, { once: true })
     this.bgm.load()
   }
 
   /** Start BGM playback (call after user interaction) */
   playBGM() {
+    console.log(`[TRACE BGM] playBGM called: musicEnabled=${audioState.musicEnabled}, bgmReady=${this.bgmReady}, bgm=${!!this.bgm}`)
     if (!audioState.musicEnabled) return
     this.initBGM()
     if (this.bgm && this.bgmReady) {
-      this.bgm.play().catch(() => {
-        // Autoplay blocked, will retry on next user interaction
+      console.log('[TRACE BGM] bgm is ready, calling play()')
+      this.bgm.play().then(() => {
+        console.log('[TRACE BGM] play() succeeded!')
+      }).catch((err) => {
+        console.warn('[TRACE BGM] play() rejected:', err)
       })
     } else if (this.bgm && !this.bgmReady) {
+      console.log('[TRACE BGM] bgm not ready yet, registering canplaythrough callback')
       // File still loading — play as soon as it's ready
       this.bgm.addEventListener('canplaythrough', () => {
         this.bgmReady = true
+        console.log('[TRACE BGM] deferred canplaythrough fired, attempting play()')
         if (audioState.musicEnabled) {
-          this.bgm!.play().catch(() => {})
+          this.bgm!.play().then(() => {
+            console.log('[TRACE BGM] deferred play() succeeded!')
+          }).catch((err) => {
+            console.warn('[TRACE BGM] deferred play() rejected:', err)
+          })
         }
       }, { once: true })
     }
