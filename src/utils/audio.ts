@@ -122,11 +122,20 @@ class AudioManager {
     return this.ctx
   }
 
-  /** Play a synthesized sound effect */
+  /** Play a synthesized sound effect (with dedup guard) */
+  private lastSfx = ''
+  private lastSfxTime = 0
+
   playSFX(name: string) {
     if (!audioState.sfxEnabled) return
     const notes = SFX_DEFS[name]
     if (!notes) return
+
+    // Prevent duplicate plays within 80ms (mobile double-fire guard)
+    const now = performance.now()
+    if (name === this.lastSfx && now - this.lastSfxTime < 80) return
+    this.lastSfx = name
+    this.lastSfxTime = now
 
     try {
       const ctx = this.getContext()
