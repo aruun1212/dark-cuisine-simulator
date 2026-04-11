@@ -1,5 +1,32 @@
-# Vue 3 + TypeScript + Vite
+# 🍳 黑暗料理模拟器
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+> 当你拥有无限创意但零厨艺时，会做出什么样的菜？
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+一款搞笑的食材搭配小游戏 —— 随机抽取奇葩食材，选择烹饪手法，看看你能创造出怎样的「黑暗料理」！
+
+## 🎮 立即体验
+
+👉 **[点击开始游戏](https://aruun1212.github.io/dark-cuisine-simulator/)**
+
+## ✨ 游戏特色
+
+- 🛒 **随机采购** — 每轮从 8 大类 24 种食材中随机刷新，你永远不知道会遇到什么
+- 🔪 **自由搭配** — 3 轮逐步升级的卡槽（1→2→3），最多 10 种食材任你组合
+- 👨‍🍳 **烹饪演出** — 选择烹饪手法，观看你的料理诞生全过程
+- ⭐ **评分系统** — 从味道、卖相、创意、营养、安全 5 个维度为你的作品打分
+- 🏆 **隐藏结局** — 特定食材组合可以触发稀有彩蛋！
+- 📖 **料理图鉴** — 收集你创造过的每一道黑暗料理
+- 🎵 **音效系统** — 沉浸式音效让做菜更有感觉
+- 📱 **分享功能** — 一键生成结果卡片，分享给朋友看看你的「大作」
+
+## 📸 游戏截图
+
+> 截图即将更新...
+
+## 🛠️ 技术栈
+
+Vue 3 + TypeScript + Vite + UnoCSS + Pinia + Web Audio API
+
+## 📄 License
+
+MIT © [aruun1212](https://github.com/aruun1212)
