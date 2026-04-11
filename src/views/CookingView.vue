@@ -95,11 +95,16 @@ function startCooking() {
   extraCritCount.value = 0
 
   // Execute pipeline silently in background, collect crits
-  const steps = executePipeline(placed)
-  const crits = steps.filter(s => s.isCrit).map(s => ({
-    name: s.critName ?? '暴击！',
-    emoji: s.emoji,
-  }))
+  let crits: { name: string; emoji: string }[] = []
+  try {
+    const steps = executePipeline(placed)
+    crits = steps.filter(s => s.isCrit).map(s => ({
+      name: s.critName ?? '暴击！',
+      emoji: s.emoji,
+    }))
+  } catch (e) {
+    console.error('[CookingView] executePipeline failed:', e)
+  }
   execCrits.value = crits
 
   if (crits.length > MAX_CRIT_DISPLAY) {
@@ -134,7 +139,11 @@ function finishExecution() {
   isExecuting.value = false
 
   if (game.isLastRound) {
-    result.computeFinalResult()
+    try {
+      result.computeFinalResult()
+    } catch (e) {
+      console.error('[CookingView] computeFinalResult failed:', e)
+    }
     game.goToResult()
     router.push('/result')
   } else {
