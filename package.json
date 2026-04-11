@@ -1,0 +1,32 @@
+{
+  "name": "dark-cuisine-simulator",
+  "private": true,
+  "version": "1.0.0",
+  "description": "🍳 黑暗料理模拟器 — 一款搞笑的暗黑食材搭配小游戏",
+  "author": "aruun1212",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "html2canvas-pro": "^2.0.2",
+    "pinia": "^3.0.4",
+    "qrcode": "^1.5.4",
+    "vue": "^3.5.32",
+    "vue-router": "^4.6.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@types/qrcode": "^1.5.6",
+    "@unocss/preset-wind3": "^66.6.8",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/tsconfig": "^0.9.1",
+    "typescript": "~6.0.2",
+    "unocss": "^66.6.8",
+    "vite": "^8.0.4",
+    "vue-tsc": "^3.2.6"
+  }
+}

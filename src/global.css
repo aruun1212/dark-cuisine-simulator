@@ -1,0 +1,29 @@
+/* Global styles — Dark Cuisine Simulator */
+
+/* Prevent tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Only show hover effects on devices that support hover (desktop) */
+@media (hover: hover) {
+  button:hover:not(:disabled) {
+    filter: brightness(1.05);
+    transition: filter 0.15s ease;
+  }
+
+  .bg-white:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.15s ease;
+  }
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Safe area inset for notched phones */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
