@@ -86,7 +86,6 @@ const MAX_CRIT_DISPLAY = 2
 
 function startCooking() {
   const placed = pipeline.getPlacedCards()
-  console.log(`[TRACE] startCooking: placed=${placed.length}, round=${game.currentRound}, isLast=${game.isLastRound}`)
   if (placed.length === 0) return
 
   game.startExecute()
@@ -94,23 +93,19 @@ function startCooking() {
   execCrits.value = []
   showCritIndex.value = -1
   extraCritCount.value = 0
-  console.log('[TRACE] startCooking: phase set to execute, isExecuting=true')
 
   // Execute pipeline silently in background, collect crits
   let crits: { name: string; emoji: string }[] = []
   try {
-    console.log('[TRACE] startCooking: calling executePipeline...')
     const steps = executePipeline(placed)
-    console.log(`[TRACE] startCooking: executePipeline returned ${steps.length} steps`)
     crits = steps.filter(s => s.isCrit).map(s => ({
       name: s.critName ?? '暴击！',
       emoji: s.emoji,
     }))
   } catch (e) {
-    console.error('[TRACE] startCooking: executePipeline CRASHED:', e)
+    console.error('[CookingView] executePipeline failed:', e)
   }
   execCrits.value = crits
-  console.log(`[TRACE] startCooking: crits=${crits.length}, scheduling finishExecution in 2s`)
 
   if (crits.length > MAX_CRIT_DISPLAY) {
     extraCritCount.value = crits.length - MAX_CRIT_DISPLAY
@@ -120,7 +115,6 @@ function startCooking() {
 
   // Base cooking animation: 2 seconds, then show crits
   setTimeout(() => {
-    console.log(`[TRACE] setTimeout fired: crits=${crits.length}`)
     if (crits.length > 0) {
       showNextCrit()
     } else {
@@ -142,24 +136,18 @@ function showNextCrit() {
 }
 
 function finishExecution() {
-  console.log(`[TRACE] finishExecution: isLastRound=${game.isLastRound}, round=${game.currentRound}, phase=${game.phase}, subPhase=${game.cookingSubPhase}`)
   isExecuting.value = false
 
   if (game.isLastRound) {
     try {
-      console.log('[TRACE] finishExecution: calling computeFinalResult...')
       result.computeFinalResult()
-      console.log('[TRACE] finishExecution: computeFinalResult OK')
     } catch (e) {
-      console.error('[TRACE] finishExecution: computeFinalResult CRASHED:', e)
+      console.error('[CookingView] computeFinalResult failed:', e)
     }
-    console.log('[TRACE] finishExecution: calling goToResult + router.push(/result)')
     game.goToResult()
     router.push('/result')
   } else {
-    console.log(`[TRACE] finishExecution: calling nextRound (current=${game.currentRound})`)
     game.nextRound()
-    console.log(`[TRACE] finishExecution: nextRound done (now round=${game.currentRound})`)
   }
 }
 </script>
