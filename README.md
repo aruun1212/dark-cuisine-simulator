@@ -29,4 +29,12 @@ Vue 3 + TypeScript + Vite + UnoCSS + Pinia + Web Audio API
 
 ## 📄 License
 
-MIT © [aruun1212](https://github.com/aruun1212)
+本项目源代码采用 [MIT License](./LICENSE) 开源。
+
+⚠️ **以下资源不包含在 MIT License 范围内，有独立的授权条款：**
+
+| 资源 | 来源 | 授权 |
+|------|------|------|
+| BGM (`public/audio/bgm.mp3`) | [Suno AI](https://suno.com/) 生成 | 非商用（Suno 免费版授权） |
+
+如需商用本项目，请将上述资源替换为自有或可商用授权的版本。
