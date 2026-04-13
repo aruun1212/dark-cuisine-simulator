@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Design docs (local only)
+docs/one-pager.md
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
