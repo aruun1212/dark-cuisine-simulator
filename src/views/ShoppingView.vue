@@ -55,11 +55,13 @@ function startCooking() {
   <div class="min-h-screen pb-32 bg-gradient-to-b from-amber-50 to-orange-50">
     <!-- Header -->
     <div class="sticky top-0 z-10 bg-white/90 backdrop-blur-sm shadow-sm px-4 py-3">
-      <div class="flex items-center justify-center gap-4">
-        <h2 class="text-lg font-bold">🛒 超市采购</h2>
+      <div class="flex items-center justify-between">
         <div class="text-sm font-medium text-gray-500">
           🧺 {{ economy.basketCount }}/{{ economy.basketCapacity }}份
         </div>
+        <h2 class="text-lg font-bold">🛒 超市采购</h2>
+        <!-- Spacer to balance audio control on right -->
+        <div class="w-12"></div>
       </div>
     </div>
 

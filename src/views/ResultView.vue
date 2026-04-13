@@ -36,8 +36,25 @@ onMounted(async () => {
 })
 
 const tierLabels: Record<number, string> = {
-  1: '负/黑洞', 2: '几乎没有', 3: '淡雅',
-  4: '适中', 5: '浓郁', 6: '极致', 7: '超维度',
+  1: '翻车现场💀', 2: '若有似无', 3: '小有心意',
+  4: '中规中矩', 5: '有点东西', 6: '绝绝子🔥', 7: '封神之作👑',
+}
+
+/** Tier → percentage for progress bar (1~7 → 0%~100%) */
+function tierPercent(tier: number): number {
+  const map: Record<number, number> = { 1: 5, 2: 18, 3: 35, 4: 50, 5: 70, 6: 88, 7: 100 }
+  return map[tier] ?? 0
+}
+
+/** Tier → bar color class */
+function tierBarColor(tier: number): string {
+  if (tier <= 1) return 'bg-gray-400'
+  if (tier <= 2) return 'bg-blue-300'
+  if (tier <= 3) return 'bg-green-400'
+  if (tier <= 4) return 'bg-yellow-400'
+  if (tier <= 5) return 'bg-orange-400'
+  if (tier <= 6) return 'bg-red-400'
+  return 'bg-gradient-to-r from-purple-500 to-pink-500'
 }
 
 const triggeredRareCombos = RARE_COMBOS.filter(c => result.rareCombos.includes(c.id))
@@ -136,19 +153,24 @@ function closeOverlay() {
         <div class="text-sm text-gray-500 mt-0.5">{{ tierLabels[result.tiers.calories] }}</div>
       </div>
 
-      <!-- Color / Aroma / Taste -->
-      <div class="flex justify-center gap-6 mb-4 text-sm text-gray-400">
-        <div class="text-center">
-          <span>🎨 色</span>
-          <div class="mt-0.5">{{ tierLabels[result.tiers.color] }}</div>
-        </div>
-        <div class="text-center">
-          <span>👃 香</span>
-          <div class="mt-0.5">{{ tierLabels[result.tiers.aroma] }}</div>
-        </div>
-        <div class="text-center">
-          <span>👅 味</span>
-          <div class="mt-0.5">{{ tierLabels[result.tiers.taste] }}</div>
+      <!-- Color / Aroma / Taste with progress bars -->
+      <div class="space-y-3 mb-4 px-2">
+        <div v-for="dim in [
+          { label: '🎨 色', tier: result.tiers.color },
+          { label: '👃 香', tier: result.tiers.aroma },
+          { label: '👅 味', tier: result.tiers.taste },
+        ]" :key="dim.label">
+          <div class="flex items-center justify-between text-sm mb-1">
+            <span class="text-gray-500 font-medium">{{ dim.label }}</span>
+            <span class="text-xs text-gray-400">{{ tierLabels[dim.tier] }}</span>
+          </div>
+          <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-700 ease-out"
+              :class="tierBarColor(dim.tier)"
+              :style="{ width: tierPercent(dim.tier) + '%' }"
+            ></div>
+          </div>
         </div>
       </div>
 
@@ -213,10 +235,28 @@ function closeOverlay() {
           <div class="text-xs text-gray-400 mb-1">🔥 卡路里</div>
           <div class="font-black text-xl">{{ result.metrics.calories }} kcal</div>
         </div>
-        <div class="flex justify-center gap-6 mb-3 text-xs text-gray-400">
-          <div class="text-center">🎨 {{ tierLabels[result.tiers.color] }}</div>
-          <div class="text-center">👃 {{ tierLabels[result.tiers.aroma] }}</div>
-          <div class="text-center">👅 {{ tierLabels[result.tiers.taste] }}</div>
+        <!-- Color / Aroma / Taste bars for share card -->
+        <div class="space-y-2 mb-3 px-1">
+          <div v-for="dim in [
+            { label: '🎨 色', tier: result.tiers.color },
+            { label: '👃 香', tier: result.tiers.aroma },
+            { label: '👅 味', tier: result.tiers.taste },
+          ]" :key="dim.label">
+            <div class="flex items-center justify-between text-xs mb-0.5">
+              <span class="text-gray-500">{{ dim.label }}</span>
+              <span class="text-gray-400">{{ tierLabels[dim.tier] }}</span>
+            </div>
+            <div style="width:100%;height:8px;background:#f3f4f6;border-radius:9999px;overflow:hidden">
+              <div
+                :style="{
+                  width: tierPercent(dim.tier) + '%',
+                  height: '100%',
+                  borderRadius: '9999px',
+                  background: dim.tier <= 1 ? '#9ca3af' : dim.tier <= 2 ? '#93c5fd' : dim.tier <= 3 ? '#4ade80' : dim.tier <= 4 ? '#facc15' : dim.tier <= 5 ? '#fb923c' : dim.tier <= 6 ? '#f87171' : 'linear-gradient(to right, #a855f7, #ec4899)',
+                }"
+              ></div>
+            </div>
+          </div>
         </div>
         <div class="text-center text-xs text-gray-400 mb-3">
           <span v-for="(id, i) in result.techniqueSequence" :key="i">
