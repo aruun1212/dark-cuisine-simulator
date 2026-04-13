@@ -1,39 +1,41 @@
-import { getTechniqueById } from '../data/techniques'
+import { getTechniqueById, TECHNIQUES } from '../data/techniques'
 import { getIngredientById } from '../data/ingredients'
 import { DISH_SUFFIX, DEFAULT_SUFFIX } from '../data/endings'
 
+/** Default technique sort order (index in TECHNIQUES array) */
+const TECH_ORDER: Record<string, number> = {}
+TECHNIQUES.forEach((t, i) => { TECH_ORDER[t.id] = i })
+
 /**
- * Compress consecutive identical technique IDs into modifier words.
- * e.g., [fry, fry, fry] → "三重煎"
- * e.g., [chop, fry, fry, roast] → "切·双重煎·烤"
+ * Count all occurrences of each technique across the entire sequence,
+ * sort by default technique order, and join WITHOUT separators.
+ * e.g., [chop, fry, fry, roast] → "切双重煎烤"
+ * e.g., [fry, roast, fry, roast] → "双重煎双重烤"
  */
 function compressTechniques(techniqueIds: string[]): string {
   if (techniqueIds.length === 0) return ''
 
-  const groups: { id: string; count: number }[] = []
-  let current = techniqueIds[0]
-  let count = 1
-
-  for (let i = 1; i < techniqueIds.length; i++) {
-    if (techniqueIds[i] === current) {
-      count++
-    } else {
-      groups.push({ id: current, count })
-      current = techniqueIds[i]
-      count = 1
-    }
+  // Count total occurrences of each technique
+  const countMap: Record<string, number> = {}
+  for (const id of techniqueIds) {
+    countMap[id] = (countMap[id] || 0) + 1
   }
-  groups.push({ id: current, count })
 
-  return groups.map(g => {
-    const tech = getTechniqueById(g.id)
-    const name = tech?.name ?? g.id
-    if (g.count === 1) return name
-    if (g.count === 2) return `双重${name}`
-    if (g.count === 3) return `三重${name}`
-    if (g.count === 4) return `四重${name}`
+  // Sort by default technique order
+  const sortedIds = Object.keys(countMap).sort(
+    (a, b) => (TECH_ORDER[a] ?? 99) - (TECH_ORDER[b] ?? 99)
+  )
+
+  return sortedIds.map(id => {
+    const tech = getTechniqueById(id)
+    const name = tech?.name ?? id
+    const count = countMap[id]
+    if (count === 1) return name
+    if (count === 2) return `双重${name}`
+    if (count === 3) return `三重${name}`
+    if (count === 4) return `四重${name}`
     return `疯狂${name}` // 5+
-  }).join('·')
+  }).join('')
 }
 
 /**

@@ -27,17 +27,40 @@ const TOTAL_CRIT_EVENTS = TECHNIQUES.length          // 14
 const TOTAL_RARE_COMBOS = RARE_COMBOS.length         // 8
 const TOTAL_ALL = TOTAL_MAIN_ENDINGS + TOTAL_TAG_ENDINGS + TOTAL_CRIT_EVENTS + TOTAL_RARE_COMBOS
 
+export interface NewUnlocks {
+  mainEndings: string[]
+  tagEndings: string[]
+  critEvents: string[]
+  rareCombos: string[]
+}
+
 export const useCollectionStore = defineStore('collection', () => {
   const data = ref<CollectionData>(loadFromStorage())
+
+  // Track newly unlocked items in the current game session
+  const newUnlocks = ref<NewUnlocks>({
+    mainEndings: [], tagEndings: [], critEvents: [], rareCombos: [],
+  })
 
   function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data.value))
   }
 
+  /** Clear session new-unlock markers (call at game start) */
+  function clearNewUnlocks() {
+    newUnlocks.value = { mainEndings: [], tagEndings: [], critEvents: [], rareCombos: [] }
+  }
+
+  const hasNewUnlocks = computed(() => {
+    const n = newUnlocks.value
+    return n.mainEndings.length + n.tagEndings.length + n.critEvents.length + n.rareCombos.length > 0
+  })
+
   // ═══════ Unlock methods ═══════
   function unlockEnding(endingName: string) {
     if (!data.value.mainEndings[endingName]) {
       data.value.mainEndings[endingName] = true
+      newUnlocks.value.mainEndings.push(endingName)
       save()
     }
   }
@@ -45,6 +68,7 @@ export const useCollectionStore = defineStore('collection', () => {
   function unlockTag(tag: string) {
     if (!data.value.tagEndings[tag]) {
       data.value.tagEndings[tag] = true
+      newUnlocks.value.tagEndings.push(tag)
       save()
     }
   }
@@ -52,6 +76,7 @@ export const useCollectionStore = defineStore('collection', () => {
   function unlockCrit(techniqueId: string) {
     if (!data.value.critEvents[techniqueId]) {
       data.value.critEvents[techniqueId] = true
+      newUnlocks.value.critEvents.push(techniqueId)
       save()
     }
   }
@@ -59,6 +84,7 @@ export const useCollectionStore = defineStore('collection', () => {
   function unlockRareCombo(comboId: string) {
     if (!data.value.rareCombos[comboId]) {
       data.value.rareCombos[comboId] = true
+      newUnlocks.value.rareCombos.push(comboId)
       save()
     }
   }
@@ -79,8 +105,8 @@ export const useCollectionStore = defineStore('collection', () => {
   )
 
   return {
-    data,
-    unlockEnding, unlockTag, unlockCrit, unlockRareCombo,
+    data, newUnlocks, hasNewUnlocks,
+    unlockEnding, unlockTag, unlockCrit, unlockRareCombo, clearNewUnlocks,
     mainEndingCount, tagEndingCount, critEventCount, rareComboCount,
     totalUnlocked, totalItems, progressPercent,
     TOTAL_MAIN_ENDINGS, TOTAL_TAG_ENDINGS, TOTAL_CRIT_EVENTS, TOTAL_RARE_COMBOS,

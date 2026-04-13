@@ -176,24 +176,31 @@ function finishExecution() {
         <div class="text-sm font-bold">🔥 {{ economy.kitchenFunds }}</div>
       </div>
 
-      <!-- Context panel: Process history + Chef comment (visible in all sub-phases) -->
-      <div class="mt-2 space-y-1">
-        <!-- Process history sequence -->
-        <div class="text-xs text-gray-500 truncate">
-          📋
-          <template v-if="processHistory.length > 0">
-            <span v-for="(name, i) in processHistory" :key="i">
-              {{ name }}{{ i < processHistory.length - 1 ? ' → ' : '' }}
-            </span>
-            <span class="text-gray-300"> → ???</span>
-          </template>
-          <template v-else>
-            <span class="text-gray-300">??? → ??? → ???</span>
-          </template>
+      <!-- Chef comment hero card + process history -->
+      <div class="mt-2 bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-3 border border-amber-100">
+        <!-- Chef emoji + comment -->
+        <div class="flex items-start gap-3">
+          <div class="text-5xl leading-none flex-shrink-0 chef-bounce">🧑‍🍳</div>
+          <div class="flex-1 min-w-0">
+            <div class="text-xs text-amber-500 font-bold mb-0.5">大厨评价</div>
+            <div class="text-base text-amber-900 font-bold leading-snug">
+              "{{ chefComment }}"
+            </div>
+          </div>
         </div>
-        <!-- Chef comment -->
-        <div class="text-xs text-amber-700 italic truncate">
-          🧑‍🍳 {{ chefComment }}
+        <!-- Process history sequence (what chef is commenting on) -->
+        <div class="mt-2 pt-2 border-t border-amber-100/60">
+          <div class="text-xs text-amber-600 font-medium">
+            📋 已执行手法：
+            <template v-if="processHistory.length > 0">
+              <span v-for="(name, i) in processHistory" :key="i"
+                class="inline-block bg-white/70 text-amber-800 px-1.5 py-0.5 rounded text-xs font-bold mr-1 mt-0.5">
+                {{ name }}
+              </span>
+              <span class="text-amber-300 ml-0.5">→ ???</span>
+            </template>
+            <span v-else class="text-amber-300">等待第一步操作...</span>
+          </div>
         </div>
       </div>
 
@@ -419,5 +426,15 @@ function finishExecution() {
 
 .crit-flash {
   animation: crit-flash 0.4s ease-out;
+}
+
+/* Chef subtle bounce */
+@keyframes chef-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.chef-bounce {
+  animation: chef-bounce 2s ease-in-out infinite;
 }
 </style>

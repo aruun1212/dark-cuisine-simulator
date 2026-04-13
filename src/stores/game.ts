@@ -5,6 +5,7 @@ import { useIngredientStore } from './ingredient'
 import { useCardStore } from './card'
 import { usePipelineStore } from './pipeline'
 import { useResultStore } from './result'
+import { useCollectionStore } from './collection'
 
 export type GamePhase = 'home' | 'shopping' | 'cooking' | 'result'
 export type CookingSubPhase = 'shop' | 'workbench' | 'execute'
@@ -27,6 +28,9 @@ export const useGameStore = defineStore('game', () => {
   // ═══════ Phase transitions ═══════
   function startShopping() {
     $reset()
+    // Clear new-unlock markers from previous session
+    const collection = useCollectionStore()
+    collection.clearNewUnlocks()
     phase.value = 'shopping'
   }
 

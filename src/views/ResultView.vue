@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useGameStore } from '../stores/game'
 import { useResultStore } from '../stores/result'
+import { useCollectionStore } from '../stores/collection'
 import { getTechniqueById } from '../data/techniques'
-import { RARE_COMBOS } from '../data/endings'
+import { RARE_COMBOS, TAG_ENDINGS } from '../data/endings'
 import { audioManager } from '../utils/audio'
 import { GAME_URL } from '../config'
 import QRCode from 'qrcode'
@@ -13,6 +14,7 @@ import html2canvas from 'html2canvas-pro'
 const router = useRouter()
 const game = useGameStore()
 const result = useResultStore()
+const collection = useCollectionStore()
 
 // Play result sound on mount
 audioManager.playSFX('result')
@@ -25,13 +27,10 @@ const qrDataUrl = ref('')
 const isGenerating = ref(false)
 
 onMounted(async () => {
-  // Pre-generate QR code (for the share image only, not shown on result page)
   if (GAME_URL) {
     try {
       qrDataUrl.value = await QRCode.toDataURL(GAME_URL, { width: 100, margin: 1 })
-    } catch {
-      // QR generation failed silently
-    }
+    } catch { /* QR generation failed silently */ }
   }
 })
 
@@ -40,13 +39,11 @@ const tierLabels: Record<number, string> = {
   4: '中规中矩', 5: '有点东西', 6: '绝绝子🔥', 7: '封神之作👑',
 }
 
-/** Tier → percentage for progress bar (1~7 → 0%~100%) */
 function tierPercent(tier: number): number {
   const map: Record<number, number> = { 1: 5, 2: 18, 3: 35, 4: 50, 5: 70, 6: 88, 7: 100 }
   return map[tier] ?? 0
 }
 
-/** Tier → bar color class */
 function tierBarColor(tier: number): string {
   if (tier <= 1) return 'bg-gray-400'
   if (tier <= 2) return 'bg-blue-300'
@@ -58,6 +55,42 @@ function tierBarColor(tier: number): string {
 }
 
 const triggeredRareCombos = RARE_COMBOS.filter(c => result.rareCombos.includes(c.id))
+
+// ═══════ NEW unlock detection ═══════
+const isNewEnding = computed(() => collection.newUnlocks.mainEndings.includes(result.endingName))
+const newTags = computed(() => result.endingTags.filter(t => collection.newUnlocks.tagEndings.includes(t)))
+const newRareCombos = computed(() => result.rareCombos.filter(id => collection.newUnlocks.rareCombos.includes(id)))
+
+// ═══════ Ending explanation ═══════
+const endingExplanation = computed(() => {
+  const cal = result.tiers.calories
+  const q = result.tiers.color + result.tiers.aroma + result.tiers.taste
+  const avgQ = q / 3
+  let calDesc = ''
+  if (cal <= 1) calDesc = '卡路里跌入负数'
+  else if (cal <= 2) calDesc = '几乎零热量'
+  else if (cal <= 3) calDesc = '轻食级热量'
+  else if (cal <= 4) calDesc = '适中热量'
+  else if (cal <= 5) calDesc = '高热量'
+  else if (cal <= 6) calDesc = '热量爆表'
+  else calDesc = '热量突破天际'
+
+  let qDesc = ''
+  if (avgQ <= 2) qDesc = '品质堪忧'
+  else if (avgQ <= 4) qDesc = '品质一般'
+  else if (avgQ <= 5) qDesc = '品质不错'
+  else qDesc = '品质超群'
+
+  return `${calDesc} + ${qDesc} → 达成此结局`
+})
+
+// ═══════ Tag explanations ═══════
+function getTagExplanation(tag: string): string {
+  const def = TAG_ENDINGS.find(t => t.tag === tag)
+  if (def?.subComment) return def.subComment
+  if (def?.nameModifier) return `触发了特殊风味修饰`
+  return '特殊烹饪效果触发'
+}
 
 function getTechName(id: string) {
   return getTechniqueById(id)?.name ?? id
@@ -78,7 +111,6 @@ async function share() {
   showShareOverlay.value = true
   await nextTick()
 
-  // Capture the hidden share card (which includes QR code)
   if (shareCard.value) {
     try {
       const canvas = await html2canvas(shareCard.value, {
@@ -103,7 +135,7 @@ function closeOverlay() {
 
 <template>
   <div class="min-h-screen bg-gradient-to-b from-amber-50 to-orange-50 px-4 py-6 pb-24">
-    <!-- ═══════ Result Display (NO QR code here) ═══════ -->
+    <!-- ═══════ Result Display ═══════ -->
     <div class="bg-white rounded-2xl p-5 shadow-lg max-w-sm mx-auto">
       <!-- Title -->
       <div class="text-center mb-4">
@@ -115,33 +147,61 @@ function closeOverlay() {
         📛 {{ result.dishName }}
       </h1>
 
-      <!-- Ending name -->
-      <div class="text-center mb-3">
-        <span class="inline-block bg-primary/10 text-primary font-bold px-4 py-1.5 rounded-full text-base">
-          🏆 {{ result.endingName }}
-        </span>
-      </div>
-      <div v-if="triggeredRareCombos.length > 0" class="text-center mb-3">
-        <div v-for="combo in triggeredRareCombos" :key="combo.id"
-          class="inline-block bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full text-sm mr-1 mb-1">
-          {{ combo.emoji }} {{ combo.name }}
+      <!-- ═══ Section 1: Ending (with explanation) ═══ -->
+      <div class="bg-orange-50 rounded-xl p-3 mb-3">
+        <div class="text-center mb-1">
+          <span class="inline-block bg-primary/10 text-primary font-bold px-4 py-1.5 rounded-full text-base relative">
+            🏆 {{ result.endingName }}
+            <span v-if="isNewEnding"
+              class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full new-badge-pulse">
+              NEW
+            </span>
+          </span>
+        </div>
+        <div class="text-xs text-gray-400 text-center mt-1.5">
+          💡 {{ endingExplanation }}
         </div>
       </div>
 
-      <!-- Sub-comments -->
-      <div v-if="result.subComments.length > 0" class="mb-4 text-center">
-        <p v-for="(comment, i) in result.subComments" :key="i"
-          class="text-base text-gray-700 italic font-medium leading-relaxed">
-          💬 "{{ comment }}"
-        </p>
+      <!-- Rare combos -->
+      <div v-if="triggeredRareCombos.length > 0" class="text-center mb-3">
+        <div v-for="combo in triggeredRareCombos" :key="combo.id"
+          class="inline-block bg-yellow-100 text-yellow-800 font-bold px-3 py-1 rounded-full text-sm mr-1 mb-1 relative">
+          {{ combo.emoji }} {{ combo.name }}
+          <span v-if="newRareCombos.includes(combo.id)"
+            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full new-badge-pulse">
+            NEW
+          </span>
+        </div>
       </div>
 
-      <!-- Tags -->
-      <div v-if="result.endingTags.length > 0" class="flex flex-wrap justify-center gap-1 mb-4">
-        <span v-for="tag in result.endingTags" :key="tag"
-          class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-          🏷️ {{ tag }}
-        </span>
+      <!-- ═══ Section 2: Comments (with context) ═══ -->
+      <div v-if="result.subComments.length > 0" class="bg-blue-50 rounded-xl p-3 mb-3">
+        <div class="text-xs text-blue-400 font-bold mb-1.5">🍽️ 食客评语</div>
+        <div v-for="(comment, i) in result.subComments" :key="i"
+          class="text-sm text-blue-800 italic font-medium leading-relaxed">
+          💬 "{{ comment }}"
+        </div>
+        <div class="text-xs text-blue-300 mt-1.5">
+          ——来自食材与手法的特殊化学反应
+        </div>
+      </div>
+
+      <!-- ═══ Section 3: Tags (with explanations) ═══ -->
+      <div v-if="result.endingTags.length > 0" class="bg-purple-50 rounded-xl p-3 mb-3">
+        <div class="text-xs text-purple-400 font-bold mb-1.5">🏷️ 解锁标签</div>
+        <div class="space-y-1.5">
+          <div v-for="tag in result.endingTags" :key="tag" class="flex items-start gap-2">
+            <span class="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full flex-shrink-0 relative">
+              {{ tag }}
+              <span v-if="newTags.includes(tag)"
+                class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-1 py-0 rounded-full new-badge-pulse">
+                N
+              </span>
+            </span>
+            <span class="text-xs text-purple-400">{{ getTagExplanation(tag) }}</span>
+          </div>
+        </div>
       </div>
 
       <div class="border-t border-gray-100 my-3"></div>
@@ -207,9 +267,13 @@ function closeOverlay() {
       <button
         @click="router.push('/collection')"
         class="w-full bg-gray-100 text-gray-600 py-3 rounded-xl font-bold text-base
-               active:scale-95 transition-transform"
+               active:scale-95 transition-transform relative"
       >
         📖 结局图鉴
+        <span v-if="collection.hasNewUnlocks"
+          class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full new-badge-pulse">
+          NEW
+        </span>
       </button>
     </div>
 
@@ -299,3 +363,13 @@ function closeOverlay() {
     </div>
   </div>
 </template>
+
+<style scoped>
+@keyframes new-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+.new-badge-pulse {
+  animation: new-badge-pulse 1.5s ease-in-out infinite;
+}
+</style>
