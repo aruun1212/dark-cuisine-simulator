@@ -28,6 +28,11 @@ const extraCritCount = ref(0)  // crits beyond the max display limit
 
 const hasPlacedCards = computed(() => pipeline.slots.some(s => s !== null))
 
+// ═══════ Round display ═══════
+const roundNames: Record<number, string> = { 1: '预处理阶段', 2: '烹调阶段', 3: '收尾阶段' }
+const roundName = computed(() => roundNames[game.currentRound] ?? `第${game.currentRound}阶段`)
+const remainingRounds = computed(() => 3 - game.currentRound)
+
 // ═══════ Ingredient drawer ═══════
 const showIngredientDrawer = ref(false)
 function toggleIngredientDrawer() {
@@ -166,10 +171,12 @@ function finishExecution() {
     <div class="sticky top-0 z-10 bg-white/90 backdrop-blur-sm shadow-sm px-4 py-2">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
-          <span class="bg-primary text-white text-xs font-bold px-2 py-1 rounded-lg">
-                    R{{ game.currentRound }}/3
+          <span class="bg-primary text-white text-xs font-bold px-2.5 py-1 rounded-lg">
+            🍳 {{ roundName }}
           </span>
           <span class="text-xs text-gray-400">
+            {{ remainingRounds > 0 ? `还剩${remainingRounds}个阶段` : '最后阶段！' }}
+            ·
             {{ game.cookingSubPhase === 'shop' ? '🏪 商店' : game.cookingSubPhase === 'workbench' ? '🔧 操作台' : '⚡ 烹饪中' }}
           </span>
         </div>
